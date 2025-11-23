@@ -29,8 +29,8 @@
 
 // Import application styles
 import './style.css';
-// Import Bootstrap JS to replace CDN usage
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+// Import Bootstrap JS components to replace CDN usage
+import { Modal } from 'bootstrap';
 // Import the markdown rendering function
 import { render } from './src/markdown/renderer.js';
 // Import GitHub integration modules
@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmRenameBtn.dataset.fileId = fileId;
         
         // Show Bootstrap modal
-        const modal = new bootstrap.Modal(renameFileModal);
+        const modal = new Modal(renameFileModal);
         modal.show();
         
         // Focus and select input text when modal is fully shown
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Hide the modal
-        const modal = bootstrap.Modal.getInstance(renameFileModal);
+        const modal = Modal.getInstance(renameFileModal);
         if (modal) {
             modal.hide();
         }
@@ -1513,8 +1513,8 @@ ${tempContainer.innerHTML}
         initializeGitHubModalContent(modal);
 
         // Show the modal
-        const bootstrapModal = new bootstrap.Modal(modal);
-        bootstrapModal.show();
+        const modalInstance = new Modal(modal);
+        modalInstance.show();
     };
 
     // Create GitHub modal element
