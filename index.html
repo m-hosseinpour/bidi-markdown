@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
-  Markdown Renderer - A client-side Markdown editor and live preview application
-  
+  NotesHubBidi - A GitHub-powered bidirectional markdown note-taking app with offline capabilities
+
   Features:
   - Real-time Markdown rendering with syntax highlighting
   - Multi-file tab system for managing multiple documents
@@ -11,9 +11,11 @@
   - LaTeX math support via KaTeX
   - Responsive design with mobile support
   - Local storage persistence
-  
+  - GitHub integration for cloud sync
+  - PWA with offline capabilities
+
   Author: Matin KG
-  Repository: https://github.com/matinkg/markdown-renderer
+  Repository: https://github.com/matinkg/bidi-markdown
   License: MIT
 -->
 <!-- Set initial theme based on preference or system (handled by JS) -->
@@ -23,7 +25,17 @@
     <!-- Character encoding and viewport settings -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="NotesHubBidi">
+    <meta name="application-name" content="NotesHubBidi">
+    <meta name="theme-color" content="#0d6efd">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/public/manifest.json">
+    <link rel="apple-touch-icon" href="/public/logo-transparent.png">
+
     <!-- SEO and social media meta tags -->
     <meta name="description"
         content="A simple, client-side Markdown editor and live renderer with syntax highlighting, theme switching, enhanced code blocks, and LaTeX math support. Write and preview Markdown easily.">
@@ -32,23 +44,23 @@
     <meta name="author" content="Matin KG">
 
     <!-- Open Graph meta tags for social media sharing -->
-    <meta property="og:title" content="Markdown Renderer - Live Editor & Preview">
+    <meta property="og:title" content="NotesHubBidi - GitHub Markdown Notes">
     <meta property="og:description"
-        content="A simple, client-side Markdown editor and live renderer with syntax highlighting, theme switching, enhanced code blocks, and LaTeX math support. Write and preview Markdown easily.">
-    <meta property="og:image" content="https://matinkg.github.io/markdown-renderer/screenshot.png">
-    <meta property="og:url" content="https://matinkg.github.io/markdown-renderer/">
+        content="A GitHub-powered bidirectional markdown note-taking app with offline capabilities, syntax highlighting, and theme switching. Write and sync your notes seamlessly.">
+    <meta property="og:image" content="/public/logo-transparent.png">
+    <meta property="og:url" content="/">
     <meta property="og:type" content="website">
 
     <!-- Twitter Card meta tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Markdown Renderer - Live Editor & Preview">
+    <meta name="twitter:title" content="NotesHubBidi - GitHub Markdown Notes">
     <meta name="twitter:description"
-        content="A simple, client-side Markdown editor and live renderer with syntax highlighting, theme switching, enhanced code blocks, and LaTeX math support. Write and preview Markdown easily.">
-    <meta name="twitter:image" content="https://matinkg.github.io/markdown-renderer/screenshot.png">
+        content="A GitHub-powered bidirectional markdown note-taking app with offline capabilities, syntax highlighting, and theme switching. Write and sync your notes seamlessly.">
+    <meta name="twitter:image" content="/public/logo-transparent.png">
     
     <meta name="google-site-verification" content="IpfD0P8v_7fwmmxe8nO-zcNdoJeLPwC-qgYjT0Vq_EQ" />
 
-    <title>Markdown Renderer - Live Editor & Preview</title>
+    <title>NotesHubBidi - GitHub Markdown Notes</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
         body {
@@ -90,10 +102,10 @@
 </head>
 
 <body class="loading">
-    <div id="page-loader" class="page-loader" role="status" aria-live="polite" aria-label="Loading Markdown Renderer">
+    <div id="page-loader" class="page-loader" role="status" aria-live="polite" aria-label="Loading NotesHubBidi">
         <div class="loader-content">
             <div class="loader-ring" aria-hidden="true"></div>
-            <p class="loader-title mb-0">Markdown Renderer</p>
+            <p class="loader-title mb-0">NotesHubBidi</p>
             <p class="loader-caption mb-0">Warming up…</p>
         </div>
     </div>
@@ -103,8 +115,8 @@
         <header class="app-header d-flex flex-wrap align-items-center gap-3 mb-3">
             <!-- Application title with logo -->
             <div class="app-header-brand d-flex align-items-center gap-2 me-auto">
-                <img src="logo.png" alt="Markdown Renderer Logo" class="app-logo" width="32" height="32">
-                <h1 class="app-title mb-0">Markdown Renderer</h1>
+                <img src="/public/logo-transparent.png" alt="NotesHubBidi Logo" class="app-logo" width="32" height="32">
+                <h1 class="app-title mb-0">NotesHubBidi</h1>
             </div>
 
             <div class="header-controls d-flex align-items-center flex-wrap gap-2 justify-content-between">
@@ -335,13 +347,28 @@
         </div>
     </div>
 
+    <!-- Register Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/public/sw.js')
+            .then(registration => {
+              console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch(error => {
+              console.error('Service Worker registration failed:', error);
+            });
+        });
+      }
+    </script>
+
     <!-- Main application script (ES6 module) -->
     <script type="module" src="script.js"></script>
 
     <!-- Fallback content for users with JavaScript disabled -->
     <noscript>
-        <h1>Markdown Renderer - Live Editor & Preview</h1>
-        <p>This is a client-side Markdown editor and live preview application. Please enable JavaScript to use it.</p>
+        <h1>NotesHubBidi - GitHub Markdown Notes</h1>
+        <p>This is a GitHub-powered bidirectional markdown note-taking app with offline capabilities. Please enable JavaScript to use it.</p>
         <p>Features include real-time Markdown rendering, syntax highlighting, theme switching, and LaTeX math support.</p>
     </noscript>
 </body>

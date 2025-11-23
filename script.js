@@ -30,7 +30,7 @@
 // Import application styles
 import './style.css';
 // Import the markdown rendering function
-import { render } from './markdown-renderer.js';
+import { render } from './src/markdown/renderer.js';
 // Import highlight.js themes as inline CSS for dynamic loading
 import hljsThemeLight from 'highlight.js/styles/github.css?inline';
 import hljsThemeDark from 'highlight.js/styles/github-dark.css?inline';

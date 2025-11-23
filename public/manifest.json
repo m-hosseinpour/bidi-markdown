@@ -1,0 +1,27 @@
+{
+  "name": "NotesHubBidi - GitHub Markdown Notes",
+  "short_name": "NotesHubBidi",
+  "description": "A GitHub-powered bidirectional markdown note-taking app with offline capabilities",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d6efd",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/public/logo-transparent.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/public/logo-transparent.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "dir": "ltr",
+  "lang": "en-US",
+  "prefer_related_applications": false
+}
