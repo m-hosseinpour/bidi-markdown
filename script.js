@@ -29,6 +29,8 @@
 
 // Import application styles
 import './style.css';
+// Import Bootstrap JS to replace CDN usage
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 // Import the markdown rendering function
 import { render } from './src/markdown/renderer.js';
 // Import GitHub integration modules
