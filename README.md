@@ -25,9 +25,12 @@ This project provides a clean interface to type Markdown on one side and see the
     *   Direction control (LTR/RTL).
 *   **Theme Switching:** Easily toggle between Light and Dark modes.
 *   **Text Direction Control:** Set the overall text direction (LTR/RTL) for the output panel.
+*   **Multi-File Tab System:** Manage multiple markdown documents simultaneously with tabbed interface.
+*   **GitHub Integration:** Sync notes to and from a private GitHub repository with personal access tokens.
 *   **Persistence:** Your input text, theme preference, auto-render setting, and direction settings are saved in your browser's `localStorage` and persist between sessions.
 *   **Client-Side Only:** Runs entirely in your browser; no server or internet connection is required after the initial page load (excluding CDN dependencies).
 *   **Responsive Design:** Adapts to different screen sizes, stacking panels vertically on smaller devices.
+*   **PWA with Offline Capabilities:** Installable application that works offline after initial load.
 
 ## Getting Started
 
@@ -62,6 +65,26 @@ That's it! The application will load and be ready to use. (Or, try the [Live Dem
 *   **Styling:** Modify `style.css` to change colors, fonts, layout, and overall appearance using CSS variables or direct styling.
 *   **Behavior:** Edit `script.js` to alter features, add new functionalities, change debounce timing, modify keyboard shortcuts, or adjust how syntax is applied.
 *   **Dependencies:** Update or change CDN links in `index.html` for `marked.js`, `highlight.js`, Bootstrap, or other libraries.
+
+## GitHub Integration
+
+The application includes comprehensive GitHub integration that allows you to:
+
+*   Authenticate with GitHub using Personal Access Tokens
+*   Configure a repository for note synchronization
+*   Sync all your local notes to GitHub
+*   Load notes from GitHub to your local application
+*   Maintain bidirectional synchronization between local storage and GitHub
+
+### How to use GitHub Sync
+
+1. Click the "Sync" button in the header
+2. Enter your GitHub Personal Access Token (with 'repo' scope)
+3. Configure your repository information (owner, name, branch)
+4. Use the "Sync to GitHub" button to upload your notes
+5. Use the "Load from GitHub" button to download notes from your repository
+
+Your notes will be saved as individual markdown files in your GitHub repository.
 
 ## Development
 

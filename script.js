@@ -31,6 +31,8 @@
 import './style.css';
 // Import the markdown rendering function
 import { render } from './src/markdown/renderer.js';
+// Import GitHub integration modules
+import { GitHubAPI, GitHubSyncManager } from './src/github/github-integration.js';
 // Import highlight.js themes as inline CSS for dynamic loading
 import hljsThemeLight from 'highlight.js/styles/github.css?inline';
 import hljsThemeDark from 'highlight.js/styles/github-dark.css?inline';
@@ -1450,6 +1452,430 @@ ${tempContainer.innerHTML}
             localStorage.setItem('markdownActiveFileId', activeFileId.toString());
         }
     });
+
+    // GitHub Integration
+    const githubAPI = new GitHubAPI();
+    const githubSyncManager = new GitHubSyncManager(githubAPI);
+
+    // Initialize GitHub UI elements
+    const setupGitHubUI = () => {
+        // Add GitHub sync button to the header
+        const githubSyncBtn = document.createElement('button');
+        githubSyncBtn.className = 'btn btn-ghost control-button';
+        githubSyncBtn.title = 'GitHub Sync';
+        githubSyncBtn.innerHTML = '<i class="bi bi-github"></i> <span>Sync</span>';
+        githubSyncBtn.id = 'github-sync-btn';
+
+        // Find the header controls container
+        const headerControls = document.querySelector('.header-controls');
+        if (headerControls) {
+            // Insert GitHub sync button - first try to insert before the GitHub link
+            const githubLink = headerControls.querySelector('a[href*="github"]');
+            if (githubLink) {
+                // Make sure githubLink is a child of headerControls before inserting
+                if (githubLink.parentNode === headerControls) {
+                    headerControls.insertBefore(githubSyncBtn, githubLink);
+                } else {
+                    // If githubLink is not a direct child, append to the end
+                    headerControls.appendChild(githubSyncBtn);
+                }
+            } else {
+                // If no GitHub link found, just append to the end
+                headerControls.appendChild(githubSyncBtn);
+            }
+        } else {
+            // If header controls not found, add to the header element
+            const header = document.querySelector('.app-header');
+            if (header) {
+                const controlsDiv = document.createElement('div');
+                controlsDiv.className = 'header-controls';
+                controlsDiv.appendChild(githubSyncBtn);
+                header.appendChild(controlsDiv);
+            }
+        }
+
+        // Add click event for GitHub sync button
+        githubSyncBtn.addEventListener('click', showGitHubModal);
+    };
+
+    // Show GitHub modal for authentication and configuration
+    const showGitHubModal = () => {
+        // Create modal if it doesn't exist
+        let modal = document.getElementById('githubModal');
+        if (!modal) {
+            modal = createGitHubModal();
+            document.body.appendChild(modal);
+        }
+
+        // Initialize modal content
+        initializeGitHubModalContent(modal);
+
+        // Show the modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+    };
+
+    // Create GitHub modal element
+    const createGitHubModal = () => {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.id = 'githubModal';
+        modal.tabIndex = -1;
+        modal.innerHTML = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">GitHub Sync</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="github-auth-section mb-4">
+                            <h6><i class="bi bi-key"></i> GitHub Authentication</h6>
+                            <div class="mb-3">
+                                <label for="githubToken" class="form-label">Personal Access Token</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="githubToken" placeholder="Enter your GitHub Personal Access Token">
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleTokenVisibility">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    Create a token at <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings</a> with 'repo' scope.
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary" id="saveTokenBtn">Save Token</button>
+                                <button class="btn btn-outline-secondary" id="clearTokenBtn">Clear Token</button>
+                            </div>
+                        </div>
+
+                        <div class="github-repo-section mb-4">
+                            <h6><i class="bi bi-folder"></i> Repository Configuration</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="repoOwner" class="form-label">Repository Owner</label>
+                                        <input type="text" class="form-control" id="repoOwner" placeholder="e.g., username">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="repoName" class="form-label">Repository Name</label>
+                                        <input type="text" class="form-control" id="repoName" placeholder="e.g., my-notes">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="repoBranch" class="form-label">Branch</label>
+                                        <input type="text" class="form-control" id="repoBranch" value="main" placeholder="e.g., main">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Status</label>
+                                        <div class="form-control-plaintext">
+                                            <span id="githubStatus">Not authenticated</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary" id="saveRepoInfoBtn">Save Repository Info</button>
+                            </div>
+                        </div>
+
+                        <div class="github-sync-section">
+                            <h6><i class="bi bi-arrow-repeat"></i> Sync Operations</h6>
+                            <div class="d-flex gap-2 mb-3">
+                                <button class="btn btn-success" id="syncToGitHubBtn">
+                                    <i class="bi bi-upload"></i> Sync to GitHub
+                                </button>
+                                <button class="btn btn-info" id="loadFromGitHubBtn">
+                                    <i class="bi bi-download"></i> Load from GitHub
+                                </button>
+                            </div>
+
+                            <div class="alert alert-info d-none" id="syncProgressAlert" role="alert">
+                                <div class="d-flex align-items-center">
+                                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                                        <span class="visually-hidden">Syncing...</span>
+                                    </div>
+                                    <span id="syncProgressText">Sync in progress...</span>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-success d-none" id="syncSuccessAlert" role="alert">
+                                <i class="bi bi-check-circle"></i> <span id="syncSuccessText"></span>
+                            </div>
+
+                            <div class="alert alert-danger d-none" id="syncErrorAlert" role="alert">
+                                <i class="bi bi-exclamation-triangle"></i> <span id="syncErrorText"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        return modal;
+    };
+
+    // Initialize GitHub modal content
+    const initializeGitHubModalContent = (modal) => {
+        // Set up token field with saved value
+        const tokenField = modal.querySelector('#githubToken');
+        const savedToken = githubAPI.getToken();
+        tokenField.value = savedToken ? '••••••••••••••••' : '';
+        tokenField.disabled = !!savedToken;
+
+        // Set up repo info fields with saved values
+        modal.querySelector('#repoOwner').value = githubAPI.repoOwner;
+        modal.querySelector('#repoName').value = githubAPI.repoName;
+        modal.querySelector('#repoBranch').value = githubAPI.branch || 'main';
+
+        // Update status
+        updateGitHubStatus(modal);
+
+        // Set up event listeners
+        setupGitHubModalEvents(modal);
+    };
+
+    // Set up event listeners for the GitHub modal
+    const setupGitHubModalEvents = (modal) => {
+        // Toggle token visibility
+        const toggleTokenBtn = modal.querySelector('#toggleTokenVisibility');
+        const tokenField = modal.querySelector('#githubToken');
+        let tokenVisible = false;
+
+        toggleTokenBtn.addEventListener('click', () => {
+            tokenField.type = tokenVisible ? 'password' : 'text';
+            toggleTokenBtn.innerHTML = tokenVisible ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+            tokenVisible = !tokenVisible;
+        });
+
+        // Save token
+        modal.querySelector('#saveTokenBtn').addEventListener('click', async () => {
+            const token = tokenField.value.trim();
+            if (!token) {
+                showAlert(modal, 'Please enter a GitHub token', 'error');
+                return;
+            }
+
+            try {
+                githubAPI.setToken(token);
+                tokenField.disabled = true;
+                showAlert(modal, 'Token saved successfully!', 'success');
+                updateGitHubStatus(modal);
+            } catch (error) {
+                showAlert(modal, `Error saving token: ${error.message}`, 'error');
+            }
+        });
+
+        // Clear token
+        modal.querySelector('#clearTokenBtn').addEventListener('click', () => {
+            githubAPI.clearToken();
+            tokenField.disabled = false;
+            tokenField.value = '';
+            showAlert(modal, 'Token cleared', 'success');
+            updateGitHubStatus(modal);
+        });
+
+        // Save repository info
+        modal.querySelector('#saveRepoInfoBtn').addEventListener('click', () => {
+            const owner = modal.querySelector('#repoOwner').value.trim();
+            const name = modal.querySelector('#repoName').value.trim();
+            const branch = modal.querySelector('#repoBranch').value.trim() || 'main';
+
+            if (!owner || !name) {
+                showAlert(modal, 'Please enter both repository owner and name', 'error');
+                return;
+            }
+
+            try {
+                githubAPI.setRepository(owner, name, branch);
+                showAlert(modal, 'Repository info saved successfully!', 'success');
+                updateGitHubStatus(modal);
+            } catch (error) {
+                showAlert(modal, `Error saving repository info: ${error.message}`, 'error');
+            }
+        });
+
+        // Sync to GitHub
+        modal.querySelector('#syncToGitHubBtn').addEventListener('click', async () => {
+            if (!githubAPI.isAuthenticated() || !githubAPI.isRepositoryConfigured()) {
+                showAlert(modal, 'Please authenticate and configure repository first', 'error');
+                return;
+            }
+
+            try {
+                showSyncProgress(modal, 'Syncing files to GitHub...');
+
+                const syncResult = await githubSyncManager.syncToGitHub(files);
+
+                // Process results
+                let successCount = syncResult.success.length;
+                let failCount = syncResult.failed.length;
+                let skipCount = syncResult.skipped.length;
+
+                let message = `Sync completed: ${successCount} success`;
+                if (failCount > 0) message += `, ${failCount} failed`;
+                if (skipCount > 0) message += `, ${skipCount} skipped`;
+
+                showSyncSuccess(modal, message);
+            } catch (error) {
+                showSyncError(modal, `Sync failed: ${error.message}`);
+            }
+        });
+
+        // Load from GitHub
+        modal.querySelector('#loadFromGitHubBtn').addEventListener('click', async () => {
+            if (!githubAPI.isAuthenticated() || !githubAPI.isRepositoryConfigured()) {
+                showAlert(modal, 'Please authenticate and configure repository first', 'error');
+                return;
+            }
+
+            try {
+                showSyncProgress(modal, 'Loading files from GitHub...');
+
+                const loadResult = await githubSyncManager.loadFromGitHub((fileData) => {
+                    // Extract filename without the .md extension
+                    const fileName = fileData.path.replace(/\.md$/, '');
+
+                    // Create or update the file in our local files
+                    let fileId = null;
+
+                    // Check if a file with this name already exists
+                    for (const [id, file] of Object.entries(files)) {
+                        if (file.name === fileName) {
+                            // Update existing file
+                            files[id].content = fileData.content;
+                            fileId = parseInt(id);
+                            break;
+                        }
+                    }
+
+                    // If no existing file found, create a new one
+                    if (fileId === null) {
+                        fileId = createNewFile(fileName, fileData.content);
+                    }
+
+                    return { id: fileId, name: fileName };
+                });
+
+                // Update tabs UI after loading files
+                updateTabsUI();
+
+                // If we switched to a new file, update the editor content
+                if (activeFileId && files[activeFileId]) {
+                    markdownInput.value = files[activeFileId].content;
+                    if (isAutoRenderEnabled) {
+                        renderMarkdown();
+                    }
+                }
+
+                // Process results
+                let successCount = loadResult.success.length;
+                let failCount = loadResult.failed.length;
+
+                let message = `Load completed: ${successCount} files loaded`;
+                if (failCount > 0) message += `, ${failCount} failed`;
+
+                showSyncSuccess(modal, message);
+            } catch (error) {
+                showSyncError(modal, `Load failed: ${error.message}`);
+            }
+        });
+    };
+
+    // Update GitHub status display
+    const updateGitHubStatus = (modal) => {
+        const statusElement = modal.querySelector('#githubStatus');
+
+        if (githubAPI.isAuthenticated()) {
+            if (githubAPI.isRepositoryConfigured()) {
+                statusElement.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> Authenticated and repository configured';
+                statusElement.className = 'form-control-plaintext text-success';
+            } else {
+                statusElement.innerHTML = '<i class="bi bi-exclamation-circle-fill text-warning"></i> Authenticated but repository not configured';
+                statusElement.className = 'form-control-plaintext text-warning';
+            }
+        } else {
+            statusElement.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i> Not authenticated';
+            statusElement.className = 'form-control-plaintext text-danger';
+        }
+    };
+
+    // Show alert in modal
+    const showAlert = (modal, message, type) => {
+        const alertElement = modal.querySelector('#syncErrorAlert');
+        const alertText = modal.querySelector('#syncErrorText');
+
+        // Show appropriate alert based on type
+        const successAlert = modal.querySelector('#syncSuccessAlert');
+        const successText = modal.querySelector('#syncSuccessText');
+        const errorAlert = modal.querySelector('#syncErrorAlert');
+        const errorText = modal.querySelector('#syncErrorText');
+        const progressAlert = modal.querySelector('#syncProgressAlert');
+
+        // Hide all alerts first
+        successAlert.classList.add('d-none');
+        errorAlert.classList.add('d-none');
+        progressAlert.classList.add('d-none');
+
+        if (type === 'success') {
+            successText.textContent = message;
+            successAlert.classList.remove('d-none');
+        } else if (type === 'error') {
+            errorText.textContent = message;
+            errorAlert.classList.remove('d-none');
+        }
+    };
+
+    // Show sync progress
+    const showSyncProgress = (modal, message) => {
+        const progressAlert = modal.querySelector('#syncProgressAlert');
+        const progressText = modal.querySelector('#syncProgressText');
+
+        progressText.textContent = message;
+        progressAlert.classList.remove('d-none');
+
+        // Hide other alerts
+        modal.querySelector('#syncSuccessAlert').classList.add('d-none');
+        modal.querySelector('#syncErrorAlert').classList.add('d-none');
+    };
+
+    // Show sync success
+    const showSyncSuccess = (modal, message) => {
+        const successAlert = modal.querySelector('#syncSuccessAlert');
+        const successText = modal.querySelector('#syncSuccessText');
+
+        successText.textContent = message;
+        successAlert.classList.remove('d-none');
+
+        // Hide other alerts
+        modal.querySelector('#syncProgressAlert').classList.add('d-none');
+        modal.querySelector('#syncErrorAlert').classList.add('d-none');
+    };
+
+    // Show sync error
+    const showSyncError = (modal, message) => {
+        const errorAlert = modal.querySelector('#syncErrorAlert');
+        const errorText = modal.querySelector('#syncErrorText');
+
+        errorText.textContent = message;
+        errorAlert.classList.remove('d-none');
+
+        // Hide other alerts
+        modal.querySelector('#syncProgressAlert').classList.add('d-none');
+        modal.querySelector('#syncSuccessAlert').classList.add('d-none');
+    };
+
+    // Initialize GitHub UI
+    setupGitHubUI();
 
     window.addEventListener('load', () => {
         requestAnimationFrame(() => {
